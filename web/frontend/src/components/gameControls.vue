@@ -150,15 +150,6 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
         開始比賽
       </button>
 
-      <!-- End match / Restart (Available after finished) -->
-      <button
-        v-if="roomState === 'finished'"
-        @click="emit('endMatch')"
-        class="rounded bg-gray-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
-      >
-        結束對戰
-      </button>
-
       <!-- Terminate match (During play, for creator) -->
       <button
         v-if="roomState === 'playing' && isCreator"
@@ -168,12 +159,12 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
         中斷比賽
       </button>
 
-      <!-- Leave room (Always available) -->
+      <!-- Leave room / End match (Always available) -->
       <button
         @click="emit('leaveRoom')"
         class="rounded border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
       >
-        離開房間
+        結束對戰
       </button>
     </div>
   </div>
