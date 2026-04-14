@@ -45,8 +45,12 @@ export function useBoard() {
     function setupListeners() {
         const socket = connectSocket()
 
-        socket.on('connect', () => { isConnected.value = true })
-        socket.on('disconnect', () => { isConnected.value = false })
+        socket.on('connect', () => { 
+            isConnected.value = true
+        })
+        socket.on('disconnect', () => { 
+            isConnected.value = false
+        })
         isConnected.value = socket.connected
 
         onRoomCreated((data) => {

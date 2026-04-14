@@ -16,7 +16,6 @@ defineProps<{
 
 const emit = defineEmits<{
   startGame: []
-  terminateMatch: []
   endMatch: []
   leaveRoom: []
 }>()
@@ -119,15 +118,6 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
         開始比賽
       </button>
 
-      <!-- Terminate match (creator only, during playing) -->
-      <button
-        v-if="roomState === 'playing' && isCreator"
-        @click="emit('terminateMatch')"
-        class="rounded bg-red-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-700"
-      >
-        終止比賽
-      </button>
-
       <!-- End match (after finished) -->
       <button
         v-if="roomState === 'finished'"
@@ -137,10 +127,13 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
         結束比賽
       </button>
 
-      <!-- Leave room -->
+      <!-- Leave room / Terminate match -->
       <button
         @click="emit('leaveRoom')"
-        class="rounded border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+        class="rounded px-4 py-1.5 text-sm font-medium"
+        :class="roomState === 'playing' && isCreator 
+          ? 'bg-red-600 text-white hover:bg-red-700' 
+          : 'border border-gray-300 text-gray-700 hover:bg-gray-100'"
       >
         離開房間
       </button>

@@ -197,6 +197,12 @@ async def leave_room(sid: str, data: dict) -> None:
         # Broadcast the updated player count if the room still exists
         room = room_manager.get_room(room_id)
         if room:
+            if room.state == "finished" and room.winner_message:
+                await sio.emit(
+                    "game_over",
+                    {"room_id": room_id, "result": room.winner_message},
+                    room=f"{room_id}-board",
+                )
             await _broadcast_room_state(room)
         await sio.leave_room(sid, f"{room_id}-board")
 

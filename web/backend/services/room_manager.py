@@ -94,6 +94,16 @@ class RoomManager:
             return None
 
         room_id = room.room_id
+        
+        # If a player leaves during a match, terminate it
+        if room.state == "playing" and sid in room.player_sids:
+            room.state = "finished"
+            player_name = room.game.get_player_name(sid) if room.game else "Player"
+            room.winner_message = f"Match terminated ({player_name} left)"
+            self._cancel_ai_task(room)
+            self._cancel_disconnect_tasks(room)
+            room.game = None # Reset board
+
         if sid in room.player_sids:
             room.player_sids.remove(sid)
         if sid in room.spectator_sids:
@@ -144,7 +154,9 @@ class RoomManager:
 
         room.state = "finished"
         room.winner_message = "Match terminated by creator"
+        self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)
+        room.game = None # Clear board
         return room
 
     def end_match(self, room_id: str) -> None:
@@ -153,6 +165,7 @@ class RoomManager:
         if room.state != "finished":
             raise ValueError("Can only end a finished match")
 
+        self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)
         del self._rooms[room_id]
 
@@ -164,6 +177,8 @@ class RoomManager:
         player_name = room.game.get_player_name(winner_sid)
         room.state = "finished"
         room.winner_message = f"Player {player_name} wins (opponent disconnected)"
+        self._cancel_ai_task(room)
+        room.game = None # Reset board
         return room
 
     def remove_spectator(self, room_id: str, sid: str) -> None:
@@ -199,3 +214,9 @@ class RoomManager:
         for task in room.disconnect_tasks.values():
             task.cancel()
         room.disconnect_tasks.clear()
+
+    @staticmethod
+    def _cancel_ai_task(room: Room) -> None:
+        if room.ai_task:
+            room.ai_task.cancel()
+            room.ai_task = None
