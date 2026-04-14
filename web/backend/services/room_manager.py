@@ -52,7 +52,19 @@ class RoomManager:
 
     def create_room(self, room_id: str, mode: str, creator_sid: str) -> Room:
         if room_id in self._rooms:
+            room = self._rooms[room_id]
+            # 如果房間已經結束且沒有玩家，允許重製並重新使用
+            if room.state == "finished" and not room.player_sids:
+                room.state = "waiting"
+                room.mode = mode
+                room.creator_sid = creator_sid
+                room.game = None
+                room.winner_message = ""
+                self._cancel_ai_task(room)
+                self._cancel_disconnect_tasks(room)
+                return room
             raise ValueError(f"Room {room_id} already exists")
+            
         if mode not in ("ai", "pvp"):
             raise ValueError("Mode must be 'ai' or 'pvp'")
 
@@ -62,6 +74,14 @@ class RoomManager:
 
     def join_room(self, room_id: str, player_sid: str) -> Room:
         room = self._get_existing_room(room_id)
+
+        # 如果房間是結束狀態且沒有玩家，自動轉為等待中讓新玩家加入
+        if room.state == "finished" and not room.player_sids:
+            room.state = "waiting"
+            room.game = None
+            room.winner_message = ""
+            self._cancel_ai_task(room)
+            self._cancel_disconnect_tasks(room)
 
         if room.state != "waiting":
             raise ValueError(
