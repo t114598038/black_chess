@@ -45,7 +45,7 @@ function handleSpectate() {
           class="rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
           @keyup.enter="handleCreate"
         />
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4" v-show="false">
           <label class="flex items-center gap-1.5 text-sm text-gray-600">
             <input v-model="createMode" type="radio" value="ai" class="accent-amber-600" />
             對戰電腦
