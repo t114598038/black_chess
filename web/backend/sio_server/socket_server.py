@@ -351,6 +351,8 @@ async def end_match(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     try:
         room_manager.end_match(room_id)
-        await sio.emit("room_ended", {"room_id": room_id}, room=f"{room_id}-board")
+        room = room_manager.get_room(room_id)
+        if room:
+            await _broadcast_room_state(room)
     except ValueError as e:
         await sio.emit("error", {"message": str(e)}, room=sid)

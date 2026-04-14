@@ -162,12 +162,14 @@ class RoomManager:
     def end_match(self, room_id: str) -> None:
         room = self._get_existing_room(room_id)
 
-        if room.state != "finished":
-            raise ValueError("Can only end a finished match")
+        if room.state not in ("playing", "finished"):
+            raise ValueError("Can only end an active or finished match")
 
+        room.state = "waiting"
+        room.game = None
+        room.winner_message = ""
         self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)
-        del self._rooms[room_id]
 
     def set_disconnect_winner(self, room_id: str, winner_sid: str) -> Room | None:
         room = self._rooms.get(room_id)
