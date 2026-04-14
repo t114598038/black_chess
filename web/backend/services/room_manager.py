@@ -178,7 +178,7 @@ class RoomManager:
         room.winner_message = "Match terminated by creator"
         self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)
-        room.game = None # Clear board
+        # 不再將 room.game 設為 None，以保留棋盤顯示
         return room
 
     def end_match(self, room_id: str) -> None:
