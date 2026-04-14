@@ -247,5 +247,5 @@ FAIL Rank too low (Soldier vs Car)
 | `error`               | 錯誤訊息                     |
 
 
-###開發備註 (Development Notes)
-關於 PvP 模式的目前狀態 目前系統的 PvP (Player vs Player) 雙人對戰模式在 Web 前端 UI 中暫時設定為隱藏 。
+### 開發備註 (Development Notes)
+關於 PvP 模式的目前狀態 目前系統的 PvP (Player vs Player) 雙人對戰模式在 Web 前端 UI 中暫時設定為隱藏。
