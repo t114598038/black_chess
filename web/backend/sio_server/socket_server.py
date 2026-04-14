@@ -212,6 +212,9 @@ async def create_room(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     mode = data.get("mode", "")
     try:
+        # 確保先離開之前的房間
+        room_manager.leave_room(sid)
+        
         room = room_manager.create_room(room_id, mode, sid)
         await sio.enter_room(sid, f"{room_id}-board")
         await sio.emit("room_created", {"room_id": room_id, "mode": mode}, room=sid)
@@ -225,6 +228,9 @@ async def create_room(sid: str, data: dict) -> None:
 async def join_room(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     try:
+        # 確保先離開之前的房間
+        room_manager.leave_room(sid)
+        
         room = room_manager.join_room(room_id, sid)
         await sio.enter_room(sid, f"{room_id}-board")
         
