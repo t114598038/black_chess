@@ -40,11 +40,7 @@ function modeLabel(mode: string | null): string {
 
 function roleLabel(role: string | null, roleName: string | null): string {
   if (role === 'player') {
-    const nameMap: Record<string, string> = {
-      first: ' (先手)',
-      second: ' (後手)'
-    }
-    return '玩家' + (roleName ? nameMap[roleName] || '' : '')
+    return '玩家' + (roleName ? ` (${roleName})` : '')
   }
   if (role === 'spectator') return '觀戰者'
   return ''
@@ -56,7 +52,7 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
     if (turnId === 'AI_PLAYER') return '電腦'
     return '您'
   }
-  return role === 'A' ? 'Player 1' : 'Player 2'
+  return role
 }
 </script>
 

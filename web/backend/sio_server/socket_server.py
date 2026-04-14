@@ -166,7 +166,7 @@ async def disconnect(sid: str) -> None:
 
     # spectator leaves
     if sid in room.spectator_sids:
-        room_manager.remove_spectator(room.room_id, sid)
+        room_manager.leave_room(sid)
         return
 
     # player disconnects during active game → start timeout
@@ -178,6 +178,27 @@ async def disconnect(sid: str) -> None:
         )
         task = asyncio.create_task(_handle_disconnect_timeout(room.room_id, sid))
         room.disconnect_tasks[sid] = task
+    else:
+        # manual disconnect or finished game, just leave
+        room_id = room_manager.leave_room(sid)
+        if room_id:
+            await sio.emit(
+                "player_joined",
+                {"room_id": room_id, "player_count": len(room.player_sids)},
+                room=f"{room_id}-board",
+            )
+
+
+@sio.event
+async def leave_room(sid: str, data: dict) -> None:
+    room_id = room_manager.leave_room(sid)
+    if room_id:
+        print(f"Client {sid} explicitly left room {room_id}")
+        # Broadcast the updated player count if the room still exists
+        room = room_manager.get_room(room_id)
+        if room:
+            await _broadcast_room_state(room)
+        await sio.leave_room(sid, f"{room_id}-board")
 
 
 @sio.event
@@ -188,7 +209,7 @@ async def create_room(sid: str, data: dict) -> None:
         room = room_manager.create_room(room_id, mode, sid)
         await sio.enter_room(sid, f"{room_id}-board")
         await sio.emit("room_created", {"room_id": room_id, "mode": mode}, room=sid)
-        await sio.emit("player_role", {"role": "first"}, room=sid)
+        await sio.emit("player_role", {"role": "A"}, room=sid)
         await _broadcast_room_state(room)
     except ValueError as e:
         await sio.emit("error", {"message": str(e)}, room=sid)
@@ -201,7 +222,7 @@ async def join_room(sid: str, data: dict) -> None:
         room = room_manager.join_room(room_id, sid)
         await sio.enter_room(sid, f"{room_id}-board")
         
-        role = "first" if room.player_sids.index(sid) == 0 else "second"
+        role = "A" if room.player_sids.index(sid) == 0 else "B"
         await sio.emit("player_role", {"role": role}, room=sid)
 
         await sio.emit(

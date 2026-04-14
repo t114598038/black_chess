@@ -7,6 +7,7 @@ import {
     emitJoinRoom,
     emitSpectateRoom,
     emitStartGame,
+    emitLeaveRoom,
     emitMakeMove,
     emitTerminateMatch,
     emitEndMatch,
@@ -84,7 +85,9 @@ export function useBoard() {
         })
 
         onBoardUpdate((board) => {
-            boardState.value = board
+            setTimeout(() => {
+                boardState.value = board
+            }, 500)
         })
 
         onMoveResult((data) => {
@@ -209,6 +212,9 @@ export function useBoard() {
     }
 
     function leaveRoom() {
+        if (roomId.value) {
+            emitLeaveRoom(roomId.value)
+        }
         resetState()
         disconnectSocket()
     }

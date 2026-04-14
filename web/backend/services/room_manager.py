@@ -83,6 +83,32 @@ class RoomManager:
         room.spectator_sids.add(sid)
         return room
 
+    def leave_room(self, sid: str) -> str | None:
+        """
+        Removes a player or spectator from whatever room they are in.
+        Returns the room_id if they were in one, else None.
+        If the room becomes empty, it is deleted.
+        """
+        room = self.find_room_by_sid(sid)
+        if not room:
+            return None
+
+        room_id = room.room_id
+        if sid in room.player_sids:
+            room.player_sids.remove(sid)
+        if sid in room.spectator_sids:
+            room.spectator_sids.discard(sid)
+        if sid == room.creator_sid:
+            room.creator_sid = ""
+
+        # Cleanup: if no players and no spectators, delete room
+        if not room.player_sids and not room.spectator_sids:
+            print(f"Room {room_id} is now empty. Deleting.")
+            if room_id in self._rooms:
+                del self._rooms[room_id]
+        
+        return room_id
+
     def start_game(self, room_id: str, requester_sid: str) -> Room:
         room = self._get_existing_room(room_id)
 

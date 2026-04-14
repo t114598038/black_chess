@@ -47,6 +47,10 @@ export function emitStartGame(roomId: string): void {
     connectSocket().emit('start_game', { room_id: roomId })
 }
 
+export function emitLeaveRoom(roomId: string): void {
+    connectSocket().emit('leave_room', { room_id: roomId })
+}
+
 export function emitMakeMove(
     roomId: string,
     x1: number,
