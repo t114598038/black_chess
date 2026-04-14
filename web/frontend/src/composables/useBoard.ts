@@ -57,7 +57,7 @@ export function useBoard() {
             roomId.value = data.roomId
             roomMode.value = data.mode as 'ai' | 'pvp'
             roomState.value = 'waiting'
-            playerRole.value = 'player'
+            playerRole.value = 'spectator'
             isCreator.value = true
             errorMessage.value = null
         })
