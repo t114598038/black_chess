@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Optional
 
 from services.game_engine import GameEngine
 
