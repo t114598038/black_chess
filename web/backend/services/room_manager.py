@@ -114,8 +114,6 @@ class RoomManager:
         # Cleanup: if no players and no spectators, delete room
         if not room.player_sids and not room.spectator_sids:
             print(f"Room {room_id} is now empty. Deleting.")
-            self._cancel_ai_task(room)
-            self._cancel_disconnect_tasks(room)
             if room_id in self._rooms:
                 del self._rooms[room_id]
         
