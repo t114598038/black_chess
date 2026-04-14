@@ -51,7 +51,6 @@ export function useBoard() {
         socket.on('disconnect', () => { 
             isConnected.value = false
         })
-        isConnected.value = socket.connected
 
         onRoomCreated((data) => {
             roomId.value = data.roomId

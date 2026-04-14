@@ -102,9 +102,8 @@ class RoomManager:
             room.winner_message = f"Match terminated ({player_name} left)"
             self._cancel_ai_task(room)
             self._cancel_disconnect_tasks(room)
-            room.game = None
+            room.game = None # Reset board
 
-        # Remove from lists
         if sid in room.player_sids:
             room.player_sids.remove(sid)
         if sid in room.spectator_sids:
@@ -112,9 +111,9 @@ class RoomManager:
         if sid == room.creator_sid:
             room.creator_sid = ""
 
-        # Final cleanup: if no players and no spectators, delete room
+        # Cleanup: if no players and no spectators, delete room
         if not room.player_sids and not room.spectator_sids:
-            print(f"Room {room_id} is now empty. Performing final cleanup and deletion.")
+            print(f"Room {room_id} is now empty. Deleting.")
             self._cancel_ai_task(room)
             self._cancel_disconnect_tasks(room)
             if room_id in self._rooms:
@@ -165,14 +164,12 @@ class RoomManager:
     def end_match(self, room_id: str) -> None:
         room = self._get_existing_room(room_id)
 
-        if room.state not in ("playing", "finished"):
-            raise ValueError("Can only end an active or finished match")
+        if room.state != "finished":
+            raise ValueError("Can only end a finished match")
 
-        room.state = "waiting"
-        room.game = None
-        room.winner_message = ""
         self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)
+        del self._rooms[room_id]
 
     def set_disconnect_winner(self, room_id: str, winner_sid: str) -> Room | None:
         room = self._rooms.get(room_id)
