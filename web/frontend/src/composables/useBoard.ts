@@ -66,10 +66,20 @@ export function useBoard() {
             roomState.value = data.state
             roomMode.value = data.mode
             playerCount.value = data.playerCount
+            
+            // 1. 立即切換回合顯示
             currentTurn.value = data.currentTurn
             currentTurnRole.value = data.currentTurnRole
+            
             if (data.board && data.board.length) {
-                boardState.value = data.board
+                if (data.state === 'playing') {
+                    // 2. 延遲更新棋盤
+                    setTimeout(() => {
+                        boardState.value = data.board
+                    }, 500)
+                } else {
+                    boardState.value = data.board
+                }
             }
         })
 
@@ -89,21 +99,26 @@ export function useBoard() {
         })
 
         onBoardUpdate((board) => {
+            // 延遲更新棋盤
             setTimeout(() => {
                 boardState.value = board
             }, 500)
         })
 
         onMoveResult((data) => {
-            lastMoveMessage.value = data.message
+            // 1. 立即更新回合（如果是 AI 模式，turnId 會在 move_result 更新）
             currentTurn.value = data.currentTurn
-            // Note: we might want currentTurnRole here too if move_result included it
-            if (!data.success) {
-                errorMessage.value = data.message
-            } else {
-                errorMessage.value = null
-            }
-            selectedPiece.value = null
+            
+            // 2. 延遲更新訊息與清理選取狀態
+            setTimeout(() => {
+                lastMoveMessage.value = data.message
+                if (!data.success) {
+                    errorMessage.value = data.message
+                } else {
+                    errorMessage.value = null
+                }
+                selectedPiece.value = null
+            }, 500)
         })
 
         onGameOver((data) => {
