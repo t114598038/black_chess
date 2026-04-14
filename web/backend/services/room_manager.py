@@ -119,7 +119,7 @@ class RoomManager:
         
         return room_id
 
-    def start_game(self, room_id: str, requester_sid: str) -> Room:
+    def start_game(self, room_id: str, requester_sid: str, initial_turn: Optional[str] = None) -> Room:
         room = self._get_existing_room(room_id)
 
         if requester_sid != room.creator_sid:
@@ -134,7 +134,7 @@ class RoomManager:
         if room.mode == "pvp" and len(room.player_sids) < 2:
             raise ValueError("Need 2 players to start a PvP game")
 
-        game = GameEngine()
+        game = GameEngine(initial_turn=initial_turn)
 
         for sid in room.player_sids:
             game.register_player(sid)

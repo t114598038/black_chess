@@ -257,8 +257,9 @@ async def spectate_room(sid: str, data: dict) -> None:
 @sio.event
 async def start_game(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
+    initial_turn = data.get("initial_turn") # Optional: "A" or "B"
     try:
-        room = room_manager.start_game(room_id, sid)
+        room = room_manager.start_game(room_id, sid, initial_turn=initial_turn)
         board = room.game.get_public_board()
         await sio.emit(
             "game_started",

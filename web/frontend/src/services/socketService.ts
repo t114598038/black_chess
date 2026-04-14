@@ -43,8 +43,8 @@ export function emitSpectateRoom(roomId: string): void {
     connectSocket().emit('spectate_room', { room_id: roomId })
 }
 
-export function emitStartGame(roomId: string): void {
-    connectSocket().emit('start_game', { room_id: roomId })
+export function emitStartGame(roomId: string, initialTurn?: 'A' | 'B'): void {
+    connectSocket().emit('start_game', { room_id: roomId, initial_turn: initialTurn })
 }
 
 export function emitLeaveRoom(roomId: string): void {

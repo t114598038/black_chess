@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   roomId: string
   roomState: 'waiting' | 'playing' | 'finished' | null
@@ -15,10 +17,17 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  startGame: []
+  startGame: [initialTurn?: 'A' | 'B']
   endMatch: []
   leaveRoom: []
 }>()
+
+const startPreference = ref<'A' | 'B' | 'random'>('random')
+
+function handleStart() {
+  const turn = startPreference.value === 'random' ? undefined : startPreference.value
+  emit('startGame', turn)
+}
 
 function canStart(
   roomState: string | null,
@@ -107,12 +116,34 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
       {{ errorMessage }}
     </div>
 
+    <!-- Start preference (AI mode only, before start) -->
+    <div
+      v-if="canStart(roomState, isCreator, roomMode, playerCount) && roomMode === 'ai'"
+      class="rounded-lg bg-white px-4 py-2 shadow-sm"
+    >
+      <div class="mb-2 text-xs font-semibold text-gray-500">選擇先手</div>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <input v-model="startPreference" type="radio" value="random" class="accent-amber-600" />
+          隨機
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <input v-model="startPreference" type="radio" value="A" class="accent-amber-600" />
+          玩家先行
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <input v-model="startPreference" type="radio" value="B" class="accent-amber-600" />
+          電腦先行
+        </label>
+      </div>
+    </div>
+
     <!-- Action buttons -->
     <div class="flex flex-wrap gap-2">
       <!-- Start game -->
       <button
         v-if="canStart(roomState, isCreator, roomMode, playerCount)"
-        @click="emit('startGame')"
+        @click="handleStart"
         class="rounded bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700"
       >
         開始比賽

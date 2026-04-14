@@ -146,9 +146,9 @@ export function useBoard() {
         emitSpectateRoom(id)
     }
 
-    function startGame() {
+    function startGame(initialTurn?: 'A' | 'B') {
         if (roomId.value) {
-            emitStartGame(roomId.value)
+            emitStartGame(roomId.value, initialTurn)
         }
     }
 

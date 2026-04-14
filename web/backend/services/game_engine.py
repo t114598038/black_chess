@@ -28,14 +28,14 @@ PIECE_POOL_INIT = [
 ]
 
 class GameEngine:
-    def __init__(self):
+    def __init__(self, initial_turn: Optional[str] = None):
         self.checkerboard_display = [['Covered'] * 8 for _ in range(4)]
         self.piece_pool = PIECE_POOL_INIT.copy()
         random.shuffle(self.piece_pool)
         self.color_table = {}  # "A" or "B" -> "Red" or "Black"
         self.move_count_since_action = 0
         self.total_moves = 0
-        self.current_turn = random.choice(["A", "B"])
+        self.current_turn = initial_turn if initial_turn in ["A", "B"] else random.choice(["A", "B"])
         self.players = []  # List of player identifiers (e.g., sid or addr)
         self.winner = None
 
