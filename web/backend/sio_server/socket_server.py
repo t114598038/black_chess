@@ -212,7 +212,11 @@ async def create_room(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     mode = data.get("mode", "")
     try:
+        # 1. 建立房間
         room = room_manager.create_room(room_id, mode, sid)
+        # 2. 自動將房長加入為玩家
+        room_manager.join_room(room_id, sid)
+        
         await sio.enter_room(sid, f"{room_id}-board")
         await sio.emit("room_created", {"room_id": room_id, "mode": mode}, room=sid)
         await sio.emit("player_role", {"role": "A"}, room=sid)
