@@ -1,5 +1,6 @@
 import asyncio
 import signal
+import sys
 import socketio
 from pathlib import Path
 from fastapi import FastAPI
@@ -20,11 +21,13 @@ async def lifespan(app: FastAPI):
     tcp_server = TcpServer(room_manager, board_sync, sio, banqi_ai, port=8888)
     task = asyncio.create_task(tcp_server.start())
 
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(
-            sig, lambda s=sig: asyncio.create_task(_shutdown(s, task, tcp_server))
-        )
+    # Windows does not support loop.add_signal_handler
+    if sys.platform != "win32":
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(
+                sig, lambda s=sig: asyncio.create_task(_shutdown(s, task, tcp_server))
+            )
 
     yield
 

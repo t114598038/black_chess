@@ -17,17 +17,18 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  startGame: [initialTurn?: 'A' | 'B']
+  startGame: [initialTurn?: 'A' | 'B', gameMode?: 'normal' | 'endgame']
   terminateMatch: []
   endMatch: []
   leaveRoom: []
 }>()
 
 const startPreference = ref<'A' | 'B' | 'random'>('random')
+const gameMode = ref<'normal' | 'endgame'>('normal')
 
 function handleStart() {
   const turn = startPreference.value === 'random' ? undefined : startPreference.value
-  emit('startGame', turn)
+  emit('startGame', turn, gameMode.value)
 }
 
 function canStart(
@@ -139,6 +140,27 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
       </div>
     </div>
 
+    <!-- Game Mode (before start) -->
+    <div
+      v-if="canStart(roomState, isCreator, roomMode, playerCount)"
+      class="rounded-lg bg-white px-4 py-2 shadow-sm"
+    >
+      <div class="mb-2 text-xs font-semibold text-gray-500">棋局模式</div>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <input v-model="gameMode" type="radio" value="normal" class="accent-amber-600" />
+          一般模式
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+          <input v-model="gameMode" type="radio" value="endgame" class="accent-amber-600" />
+          殘局模式
+        </label>
+      </div>
+      <div v-if="gameMode === 'endgame'" class="mt-1 text-sm font-medium text-amber-600">
+        * 殘局模式固定由黑棋先手
+      </div>
+    </div>
+
     <!-- Action buttons -->
     <div class="flex flex-wrap gap-2">
       <!-- Start game -->
@@ -161,7 +183,7 @@ function turnLabel(role: string | null, mode: string | null, turnId: string | nu
 
       <!-- Leave room / End match (Always available) -->
       <button
-        @click="emit('leaveRoom')"
+        @click="isCreator ? emit('endMatch') : emit('leaveRoom')"
         class="rounded border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
       >
         結束對戰

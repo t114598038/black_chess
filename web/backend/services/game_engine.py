@@ -39,6 +39,53 @@ class GameEngine:
         self.players = []  # List of player identifiers (e.g., sid or addr)
         self.winner = None
 
+    def initialize_endgame(self):
+        """
+        Special layout for Endgame Mode:
+        - Pieces: 1 King, 1 Guard, 1 Elephant, 1 Car, 1 Horse, 1 Cannon, 2 Soldiers per side.
+        - Symmetry: Red pieces on left (cols 0-2), Black pieces mirrored on right (cols 5-7).
+        - Cols 3, 4 are 'Null'.
+        - All pieces revealed.
+        - Rule: Black moves first. 
+        - Logic: Whichever player is set to move first (self.current_turn) will be assigned 'Black'.
+        """
+        self.checkerboard_display = [['Null'] * 8 for _ in range(4)]
+        self.piece_pool = []
+        
+        # Define base pieces for one side
+        base_pieces = [
+            'King', 'Guard', 'Elephant', 'Car', 
+            'Horse', 'Cannon', 'Soldier', 'Soldier'
+        ]
+        
+        # 1. Select 8 random slots in the 4x3 left grid (Cols 0, 1, 2)
+        left_slots = [(r, c) for r in range(4) for c in range(3)]
+        chosen_slots = random.sample(left_slots, len(base_pieces))
+        
+        # 2. Shuffle pieces to assign to slots
+        shuffled_pieces = base_pieces.copy()
+        random.shuffle(shuffled_pieces)
+        
+        # 3. Place Red pieces and mirror them to create Black pieces
+        for i, p_type in enumerate(shuffled_pieces):
+            r, c = chosen_slots[i]
+            self.checkerboard_display[r][c] = f"Red_{p_type}"
+            mirror_c = 7 - c
+            self.checkerboard_display[r][mirror_c] = f"Black_{p_type}"
+            
+        # 4. Color Assignment: Whoever is current_turn must be Black
+        # self.current_turn is already set to "A", "B", or a random choice in __init__
+        first_player = self.current_turn
+        other_player = "B" if first_player == "A" else "A"
+        
+        self.color_table[first_player] = "Black"
+        self.color_table[other_player] = "Red"
+        
+        # Reset state
+        self.move_count_since_action = 0
+        self.total_moves = 0
+        self.winner = None
+
     def register_player(self, player_id: str) -> bool:
         if len(self.players) >= 2:
             return False

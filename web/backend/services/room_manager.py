@@ -53,8 +53,8 @@ class RoomManager:
     def create_room(self, room_id: str, mode: str, creator_sid: str) -> Room:
         if room_id in self._rooms:
             room = self._rooms[room_id]
-            # 如果房間已經結束且沒有玩家，允許重製並重新使用
-            if room.state == "finished" and not room.player_sids:
+            # 如果房間已經結束，允許重製並重新使用（不論是否還有玩家在裡面）
+            if room.state == "finished":
                 room.state = "waiting"
                 room.mode = mode
                 room.creator_sid = creator_sid
@@ -75,8 +75,8 @@ class RoomManager:
     def join_room(self, room_id: str, player_sid: str) -> Room:
         room = self._get_existing_room(room_id)
 
-        # 如果房間是結束狀態且沒有玩家，自動轉為等待中讓新玩家加入
-        if room.state == "finished" and not room.player_sids:
+        # 如果房間是結束狀態，自動轉為等待中讓新玩家加入（即便還有舊玩家）
+        if room.state == "finished":
             room.state = "waiting"
             room.game = None
             room.winner_message = ""
@@ -107,13 +107,14 @@ class RoomManager:
         """
         Removes a player or spectator from whatever room they are in.
         Returns the room_id if they were in one, else None.
-        If the room becomes empty, it is deleted.
+        If the room becomes empty OR the creator leaves, it is deleted.
         """
         room = self.find_room_by_sid(sid)
         if not room:
             return None
 
         room_id = room.room_id
+        is_creator = (sid == room.creator_sid)
         
         # If a player leaves during a match, terminate it
         if room.state == "playing" and sid in room.player_sids:
@@ -122,18 +123,15 @@ class RoomManager:
             room.winner_message = f"Match terminated ({player_name} left)"
             self._cancel_ai_task(room)
             self._cancel_disconnect_tasks(room)
-            room.game = None # Reset board
 
         if sid in room.player_sids:
             room.player_sids.remove(sid)
         if sid in room.spectator_sids:
             room.spectator_sids.discard(sid)
-        if sid == room.creator_sid:
-            room.creator_sid = ""
-
-        # Cleanup: if no players and no spectators, delete room
-        if not room.player_sids and not room.spectator_sids:
-            print(f"Room {room_id} is now empty. Deleting.")
+        
+        # Cleanup: if no players and no spectators, OR if the creator left, delete room
+        if (not room.player_sids and not room.spectator_sids) or is_creator:
+            print(f"Room {room_id} cleaning up (Creator left: {is_creator}). Deleting.")
             self._cancel_ai_task(room)
             self._cancel_disconnect_tasks(room)
             if room_id in self._rooms:
@@ -141,7 +139,20 @@ class RoomManager:
         
         return room_id
 
-    def start_game(self, room_id: str, requester_sid: str, initial_turn: Optional[str] = None) -> Room:
+    def restart_game(self, room_id: str, requester_sid: str) -> Room:
+        room = self._get_existing_room(room_id)
+
+        if requester_sid != room.creator_sid:
+            raise ValueError("Only the room creator can restart the game")
+
+        room.state = "waiting"
+        room.game = None
+        room.winner_message = ""
+        self._cancel_ai_task(room)
+        self._cancel_disconnect_tasks(room)
+        return room
+
+    def start_game(self, room_id: str, requester_sid: str, initial_turn: Optional[str] = None, game_type: str = "normal") -> Room:
         room = self._get_existing_room(room_id)
 
         if requester_sid != room.creator_sid:
@@ -164,6 +175,9 @@ class RoomManager:
         if room.mode == "ai":
             game.register_player(AI_PLAYER_ID)
 
+        if game_type == "endgame":
+            game.initialize_endgame()
+
         room.game = game
         room.state = "playing"
         return room
@@ -183,9 +197,6 @@ class RoomManager:
 
     def end_match(self, room_id: str) -> None:
         room = self._get_existing_room(room_id)
-
-        if room.state != "finished":
-            raise ValueError("Can only end a finished match")
 
         self._cancel_ai_task(room)
         self._cancel_disconnect_tasks(room)

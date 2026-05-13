@@ -11,6 +11,7 @@ import {
     emitMakeMove,
     emitTerminateMatch,
     emitEndMatch,
+    emitRestartGame,
     onRoomCreated,
     onRoomState,
     onPlayerJoined,
@@ -89,7 +90,9 @@ export function useBoard() {
 
         onBoardUpdate((board) => {
             setTimeout(() => {
-                boardState.value = board
+                if (roomId.value) {
+                    boardState.value = board
+                }
             }, 500)
         })
 
@@ -145,9 +148,9 @@ export function useBoard() {
         emitSpectateRoom(id)
     }
 
-    function startGame(initialTurn?: 'A' | 'B') {
+    function startGame(initialTurn?: 'A' | 'B', gameMode: 'normal' | 'endgame' = 'normal') {
         if (roomId.value) {
-            emitStartGame(roomId.value, initialTurn)
+            emitStartGame(roomId.value, initialTurn, gameMode)
         }
     }
 
@@ -195,6 +198,12 @@ export function useBoard() {
         }
     }
 
+    function restartGame() {
+        if (roomId.value) {
+            emitRestartGame(roomId.value)
+        }
+    }
+
     function resetState() {
         offAllGameEvents()
         boardState.value = []
@@ -219,7 +228,6 @@ export function useBoard() {
             emitLeaveRoom(roomId.value)
         }
         resetState()
-        disconnectSocket()
     }
 
     onUnmounted(() => {
@@ -250,6 +258,7 @@ export function useBoard() {
         handleCellClick,
         terminateMatch,
         endMatch,
+        restartGame,
         leaveRoom,
     }
 }

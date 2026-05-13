@@ -158,13 +158,6 @@ class TestTerminateAndEnd:
         manager.end_match("r1")
         assert manager.get_room("r1") is None
 
-    def test_end_non_finished_match_rejected(self, manager: RoomManager):
-        manager.create_room("r1", "ai", "sid-a")
-        manager.join_room("r1", "sid-player")
-        manager.start_game("r1", "sid-a")
-        with pytest.raises(ValueError, match="finished"):
-            manager.end_match("r1")
-
 
 class TestDisconnect:
     def test_set_disconnect_winner(self, manager: RoomManager):

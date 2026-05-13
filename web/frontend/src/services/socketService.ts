@@ -43,8 +43,12 @@ export function emitSpectateRoom(roomId: string): void {
     connectSocket().emit('spectate_room', { room_id: roomId })
 }
 
-export function emitStartGame(roomId: string, initialTurn?: 'A' | 'B'): void {
-    connectSocket().emit('start_game', { room_id: roomId, initial_turn: initialTurn })
+export function emitStartGame(roomId: string, initialTurn?: 'A' | 'B', gameMode?: 'normal' | 'endgame'): void {
+    connectSocket().emit('start_game', { 
+        room_id: roomId, 
+        initial_turn: initialTurn,
+        game_mode: gameMode || 'normal'
+    })
 }
 
 export function emitLeaveRoom(roomId: string): void {
@@ -73,6 +77,10 @@ export function emitTerminateMatch(roomId: string): void {
 
 export function emitEndMatch(roomId: string): void {
     connectSocket().emit('end_match', { room_id: roomId })
+}
+
+export function emitRestartGame(roomId: string): void {
+    connectSocket().emit('restart_game', { room_id: roomId })
 }
 
 // ── Event listener types ────────────────────────────────
@@ -183,7 +191,7 @@ export function onPlayerDisconnected(cb: (data: { roomId: string }) => void): vo
 
 export function onRoomEnded(cb: (data: { roomId: string }) => void): void {
     connectSocket().on('room_ended', (raw: Record<string, unknown>) => {
-        cb({ roomId: raw.role as string })
+        cb({ roomId: raw.room_id as string })
     })
 }
 

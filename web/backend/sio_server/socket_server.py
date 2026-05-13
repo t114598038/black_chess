@@ -147,6 +147,10 @@ async def _handle_disconnect_timeout(room_id: str, disconnected_sid: str) -> Non
                 room=f"{room_id}-board",
             )
             await _broadcast_room_state(updated)
+    else:
+        # No human players left (likely AI mode or last player left)
+        print(f"Timeout: No players left in room {room_id}. Cleaning up.")
+        room_manager.leave_room(disconnected_sid)
 
 
 # ── Socket.IO events ────────────────────────────────────────────────
@@ -191,20 +195,32 @@ async def disconnect(sid: str) -> None:
 
 @sio.event
 async def leave_room(sid: str, data: dict) -> None:
-    room_id = room_manager.leave_room(sid)
-    if room_id:
-        print(f"Client {sid} explicitly left room {room_id}")
-        # Broadcast the updated player count if the room still exists
-        room = room_manager.get_room(room_id)
-        if room:
-            if room.state == "finished" and room.winner_message:
-                await sio.emit(
-                    "game_over",
-                    {"room_id": room_id, "result": room.winner_message},
-                    room=f"{room_id}-board",
-                )
-            await _broadcast_room_state(room)
-        await sio.leave_room(sid, f"{room_id}-board")
+    room = room_manager.find_room_by_sid(sid)
+    if not room:
+        return
+
+    room_id = room.room_id
+    is_creator = (sid == room.creator_sid)
+    
+    # Notify everyone if the room is about to be deleted (creator leaving)
+    if is_creator:
+        await sio.emit("room_ended", {"room_id": room_id}, room=f"{room_id}-board")
+
+    room_manager.leave_room(sid)
+    print(f"Client {sid} explicitly left room {room_id}")
+    
+    # Broadcast the updated state if room still exists
+    updated_room = room_manager.get_room(room_id)
+    if updated_room:
+        if updated_room.state == "finished" and updated_room.winner_message:
+            await sio.emit(
+                "game_over",
+                {"room_id": room_id, "result": updated_room.winner_message},
+                room=f"{room_id}-board",
+            )
+        await _broadcast_room_state(updated_room)
+    
+    await sio.leave_room(sid, f"{room_id}-board")
 
 
 @sio.event
@@ -264,8 +280,9 @@ async def spectate_room(sid: str, data: dict) -> None:
 async def start_game(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     initial_turn = data.get("initial_turn") # Optional: "A" or "B"
+    game_mode = data.get("game_mode", "normal") # "normal" or "endgame"
     try:
-        room = room_manager.start_game(room_id, sid, initial_turn=initial_turn)
+        room = room_manager.start_game(room_id, sid, initial_turn=initial_turn, game_type=game_mode)
         board = room.game.get_public_board()
         await sio.emit(
             "game_started",
@@ -338,10 +355,23 @@ async def make_move(sid: str, data: dict) -> None:
 
 
 @sio.event
+async def restart_game(sid: str, data: dict) -> None:
+    room_id = data.get("room_id", "")
+    try:
+        room = room_manager.restart_game(room_id, sid)
+        await _broadcast_room_state(room)
+    except ValueError as e:
+        await sio.emit("error", {"message": str(e)}, room=sid)
+
+
+@sio.event
 async def terminate_match(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     try:
         room = room_manager.terminate_match(room_id, sid)
+        # For termination, we usually stay in the room but game stops.
+        # But if the user wants it to behave like 'End Match', we could also emit room_ended.
+        # However, following the 'game_over' logic for now:
         await sio.emit(
             "game_over",
             {"room_id": room_id, "result": room.winner_message},
@@ -356,9 +386,8 @@ async def terminate_match(sid: str, data: dict) -> None:
 async def end_match(sid: str, data: dict) -> None:
     room_id = data.get("room_id", "")
     try:
+        # Before deleting, notify everyone
+        await sio.emit("room_ended", {"room_id": room_id}, room=f"{room_id}-board")
         room_manager.end_match(room_id)
-        room = room_manager.get_room(room_id)
-        if room:
-            await _broadcast_room_state(room)
     except ValueError as e:
         await sio.emit("error", {"message": str(e)}, room=sid)
